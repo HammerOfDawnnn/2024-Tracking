@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Workbook Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            margin: 20px;
+        }
+
+        .dropdown {
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #ddd;
+            border: 1px solid #900;
+            color: #900;
+            border-radius: 5px;
+        }
+
+        .search {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #900;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Excel Workbook Viewer</h1>
+    </header>
+    <div class="container">
+        <div class="dropdown">
+            <label for="sheet-select">Choose a Worksheet:</label>
+            <select id="sheet-select">
+                <option value="">Select a sheet...</option>
+            </select>
+        </div>
+        <div class="search">
+            <label for="search-bar">Search:</label>
+            <input type="text" id="search-bar" placeholder="Type to search...">
+        </div>
+        <table id="data-table">
+            <thead>
+                <tr id="table-headers"></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load the JSON data
+        const dataFilePath = "worksheets_data.json"; // Ensure this file is uploaded with your webpage
+        let worksheetsData = {};
+
+        fetch(dataFilePath)
+            .then(response => response.json())
+            .then(data => {
+                worksheetsData = data;
+                populateDropdown();
+            });
+
+        const sheetSelect = document.getElementById("sheet-select");
+        const searchBar = document.getElementById("search-bar");
+        const tableHeaders = document.getElementById("table-headers");
+        const tableBody = document.getElementById("table-body");
+
+        // Populate the dropdown menu with sheet names
+        function populateDropdown() {
+            for (const sheetName in worksheetsData) {
+                const option = document.createElement("option");
+                option.value = sheetName;
+                option.textContent = sheetName;
+                sheetSelect.appendChild(option);
+            }
+        }
+
+        // Update the table when a sheet is selected
+        sheetSelect.addEventListener("change", () => {
+            const selectedSheet = sheetSelect.value;
+            if (selectedSheet) {
+                displayTable(selectedSheet);
+            } else {
+                clearTable();
+            }
+        });
+
+        // Filter table rows based on search input
+        searchBar.addEventListener("input", () => {
+            const searchText = searchBar.value.toLowerCase();
+            const rows = tableBody.querySelectorAll("tr");
+
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll("td"));
+                const matches = cells.some(cell => cell.textContent.toLowerCase().includes(searchText));
+                row.style.display = matches ? "" : "none";
+            });
+        });
+
+        // Display table for the selected sheet
+        function displayTable(sheetName) {
+            clearTable();
+
+            const sheetData = worksheetsData[sheetName];
+            if (!sheetData || sheetData.length === 0) return;
+
+            // Create table headers
+            const headers = Object.keys(sheetData[0]);
+            headers.forEach(header => {
+                const th = document.createElement("th");
+                th.textContent = header;
+                tableHeaders.appendChild(th);
+            });
+
+            // Create table rows
+            sheetData.forEach(rowData => {
+                const tr = document.createElement("tr");
+                headers.forEach(header => {
+                    const td = document.createElement("td");
+                    td.textContent = rowData[header] || "";
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Clear the table content
+        function clearTable() {
+            tableHeaders.innerHTML = "";
+            tableBody.innerHTML = "";
+        }
+    </script>
+</body>
+</html>
